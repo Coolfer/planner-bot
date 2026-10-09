@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  bot:
+    build: .
+    container_name: daily-bot
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DB_PATH=/data/planner.db
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openrouter/free}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    volumes:
+      - bot-data:/data
+    command: ["bot"]
+    # If you prefer a scheduled-only container, override command: ["plan"] and run via cron externally
+
+volumes:
+  bot-data:

@@ -4,7 +4,7 @@ import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 from groq_client import call_groq
-from db import init_db, get_pending_tasks, save_plan, get_plan_for_date, save_task
+from db import init_db, get_pending_tasks, save_plan, get_plan_for_date, save_task, get_recent_plans
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -44,7 +44,9 @@ async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         tasks = get_pending_tasks()
         task_txt = "\n".join([f"• {t['name']} ({t['category']}, {t['duration_min']} мин, приоритет {t['priority']})" for t in tasks]) or "• (нет задач)"
-        prompt = f"Сегодня: {today}.\nНерешённые дела:\n{task_txt}\n\nСоставь план на день с конкретным распределением дел по времени. Отвечай кратко, структурированно."
+        recent_plans = get_recent_plans(7)
+        history_txt = "\n".join([f"{p['date']}: {p['plan_text'][:200]}..." for p in recent_plans]) if recent_plans else "(нет истории планов)"
+        prompt = f"Сегодня: {today}.\nНерешённые дела:\n{task_txt}\n\nИстория планов (7 дней):\n{history_txt}\n\nАнализируй историю и составь план на день с конкретным распределением дел по времени. Учитывай, что не выполнено ранее. Отвечай кратко, структурированно."
         system = "Ты — ежедневник-помощник. Форматируй ВСЕ ответы строго через Markdown-таблицы (| колонка | колонка |). НЕ используй жирный текст для заголовков таблиц. НЕ используй псевдотаблицы из тире или пробелов. Для матрицы Эйзенхауэра: заголовки Срочно / Не срочно. Для расписания: День | Утро (9-12) | День (12-17) | Вечер (17-20)."
         plan = call_groq(prompt, system)
         save_plan(today, plan)
@@ -55,7 +57,9 @@ async def cmd_consult(update: Update, context: ContextTypes.DEFAULT_TYPE):
     init_db()
     tasks = get_pending_tasks()
     task_txt = "\n".join([f"• {t['name']} ({t['duration_min']} мин)" for t in tasks]) or "• нет нерешённых задач"
-    prompt = f"Мои нерешённые дела:\n{task_txt}\n\nПодскажи, как лучше распределить время сегодня? Укажи порядок и объясни кратко."
+    recent_plans = get_recent_plans(7)
+    history_txt = "\n".join([f"{p['date']}: выполнено/не выполнено — {p['plan_text'][:150]}..." for p in recent_plans]) if recent_plans else "(нет истории)"
+    prompt = f"Мои нерешённые дела:\n{task_txt}\n\nИстория планов (7 дней):\n{history_txt}\n\nАнализируй историю — что переносилось чаще всего, какие категории доминируют. Подскажи, как лучше распределить сегодня с учётом прошлых ошибок. Укажи порядок и объясни кратко."
     system = "Ты — консультант по планированию времени. Советуй, как распределить домашние дела, учитывая длительность и приоритеты. Отвечай кратко, практично, на русском."
     advice = call_groq(prompt, system)
     await update.message.reply_text(f"Совет по распределению:\n{advice}", parse_mode="MarkdownV2")
@@ -121,10 +125,15 @@ async def add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     init_db()
     text = update.message.text
-    # Попробуем извлечь задачу, если текст короткий и похож на название
-    if len(text) < 80 and not text.startswith("/"):
-        # Спросим у модели, это запрос планирования или задача?
-        pass
+    text_lower = text.lower()
+    if any(word in text_lower for word in ["список", "задач", "дел", "tasks", "list"]):
+        tasks = get_pending_tasks()
+        if tasks:
+            lines = [f"{t['id']}. {t['name']} | {t['category']} | {t['duration_min']} мин | приоритет {t['priority']}" for t in tasks]
+            await update.message.reply_text("Нерешённые дела:\n" + "\n".join(lines), parse_mode="MarkdownV2")
+        else:
+            await update.message.reply_text("Нет нерешённых задач.", parse_mode="MarkdownV2")
+        return
     # Ответим как консультант + сохраним, если это задача
     prompt = f"Пользователь написал: '{text}'\nМои нерешённые дела:\n" + "\n".join([f"• {t['name']} ({t['duration_min']} мин)" for t in get_pending_tasks()]) + "\n\nОтветь кратко, помоги распределить или ответь на вопрос по планированию."
     system = "Ты — ежедневник-помощник, отвечаешь кратко, практично, на русском."

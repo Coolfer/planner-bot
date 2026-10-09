@@ -77,6 +77,17 @@ def save_plan(date_str: str, plan_text: str, advice_text: str = ""):
     conn.close()
 
 
+def get_recent_plans(days: int = 7) -> List[Dict]:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute(
+        "SELECT date, plan_text, advice_text FROM plans WHERE date >= date('now', ? || ' days') ORDER BY date DESC",
+        (f"-{days}",),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 def get_user_prefs() -> Dict[str, str]:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row

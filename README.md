@@ -57,3 +57,4 @@ docker exec daily-bot python planner.py consult
 - `db.py` — SQLite (задачи, планы, настройки)
 - `groq_client.py` — вызов Groq API (`openai/gpt-oss-120b`)
 - `Dockerfile`, `docker-compose.yml`, `.env.example`
+# Deployed via GitHub Actions

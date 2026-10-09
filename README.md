@@ -1,6 +1,6 @@
 # Ежедневник-бот (контейнер для VPS)
 
-Телеграм-бот + планировщик домашних дел с бесплатной моделью OpenRouter (`openrouter/free` или `thinkingmachines/inkling:free`).
+Телеграм-бот + планировщик домашних дел с Groq API (`openai/gpt-oss-120b` — OpenAI 120B).
 
 ## Быстрый запуск
 
@@ -47,13 +47,13 @@ docker exec daily-bot python planner.py consult
 | Переменная | Значение по умолчанию |
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | — (обязательно) |
-| `OPENROUTER_API_KEY` | — (обязательно) |
-| `OPENROUTER_MODEL` | `openrouter/free` |
+| `GROQ_API_KEY` | — (обязательно) |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` |
 | `DB_PATH` | `/data/planner.db` |
 
 ## Файлы проекта
 - `bot.py` — Telegram-бот (python-telegram-bot)
 - `planner.py` — CLI для планирования и консультаций
 - `db.py` — SQLite (задачи, планы, настройки)
-- `openrouter_client.py` — вызов OpenRouter API
+- `groq_client.py` — вызов Groq API (`openai/gpt-oss-120b`)
 - `Dockerfile`, `docker-compose.yml`, `.env.example`

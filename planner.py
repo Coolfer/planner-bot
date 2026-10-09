@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 from datetime import datetime
-from openrouter_client import call_openrouter
+from groq_client import call_groq
 from db import init_db, get_pending_tasks, save_plan, get_plan_for_date, save_task, set_user_pref, get_user_prefs
 
 
@@ -18,7 +18,7 @@ def build_plan():
 
 Составь план на день (утро, день, вечер) с конкретным распределением дел. Укажи примерное время и длительность. Если задач много — предложи, что перенести. Будь краток, структурируй списком."""
     system = "Ты — ежедневник-помощник. Составляй реалистичный план дня с распределением домашних дел. Учитывай приоритеты и длительность. Отвечай структурированно, кратко."
-    plan = call_openrouter(prompt, system)
+    plan = call_groq(prompt, system)
     save_plan(today, plan)
     print(f"План на {today}:\n{plan}\n")
 
@@ -32,7 +32,7 @@ def consult():
 
 Подскажи, как лучше распределить время сегодня между этими делами? Укажи порядок и объясни. Отвечай кратко, практично."""
     system = "Ты — консультант по планированию времени. Советуй, как распределить домашние дела, учитывая длительность и приоритеты. Отвечай кратко, по делу."
-    advice = call_openrouter(prompt, system)
+    advice = call_groq(prompt, system)
     print(f"Совет по распределению:\n{advice}\n")
 
 

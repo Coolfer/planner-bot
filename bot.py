@@ -3,7 +3,7 @@ import os
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
-from openrouter_client import call_openrouter
+from groq_client import call_groq
 from db import init_db, get_pending_tasks, save_plan, get_plan_for_date, save_task
 
 logging.basicConfig(
@@ -46,7 +46,7 @@ async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         task_txt = "\n".join([f"• {t['name']} ({t['category']}, {t['duration_min']} мин, приоритет {t['priority']})" for t in tasks]) or "• (нет задач)"
         prompt = f"Сегодня: {today}.\nНерешённые дела:\n{task_txt}\n\nСоставь план на день с конкретным распределением дел по времени. Отвечай кратко, структурированно."
         system = "Ты — ежедневник-помощник. Составляй реалистичный план дня для домашних дел с распределением. Учитывай приоритет и длительность. Отвечай структурированно, кратко, на русском."
-        plan = call_openrouter(prompt, system)
+        plan = call_groq(prompt, system)
         save_plan(today, plan)
         await update.message.reply_text(f"План на {today}:\n{plan}")
 
@@ -57,7 +57,7 @@ async def cmd_consult(update: Update, context: ContextTypes.DEFAULT_TYPE):
     task_txt = "\n".join([f"• {t['name']} ({t['duration_min']} мин)" for t in tasks]) or "• нет нерешённых задач"
     prompt = f"Мои нерешённые дела:\n{task_txt}\n\nПодскажи, как лучше распределить время сегодня? Укажи порядок и объясни кратко."
     system = "Ты — консультант по планированию времени. Советуй, как распределить домашние дела, учитывая длительность и приоритеты. Отвечай кратко, практично, на русском."
-    advice = call_openrouter(prompt, system)
+    advice = call_groq(prompt, system)
     await update.message.reply_text(f"Совет по распределению:\n{advice}")
 
 
@@ -128,7 +128,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Ответим как консультант + сохраним, если это задача
     prompt = f"Пользователь написал: '{text}'\nМои нерешённые дела:\n" + "\n".join([f"• {t['name']} ({t['duration_min']} мин)" for t in get_pending_tasks()]) + "\n\nОтветь кратко, помоги распределить или ответь на вопрос по планированию."
     system = "Ты — ежедневник-помощник, отвечаешь кратко, практично, на русском."
-    reply = call_openrouter(prompt, system)
+    reply = call_groq(prompt, system)
     await update.message.reply_text(reply)
 
 

@@ -1,0 +1,17 @@
+name: Build and Deploy (Self-Hosted Runner on VPS)
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and deploy
+        run: |
+          docker compose down || true
+          docker compose up -d --build
+      - name: Verify
+        run: docker ps --filter "name=daily-bot" --format "table {{.Names}}\t{{.Status}}"

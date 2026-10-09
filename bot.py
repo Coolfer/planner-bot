@@ -28,7 +28,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/tasks — список дел\n"
         "/add — добавить задачу (начнёт диалог)\n"
         "/daily — показать сохранённый план\n"
-        "Напиши мне текстом — я отвечу и помогу распределить дела.", parse_mode="MarkdownV2"
+        "Напиши мне текстом — я отвечу и помогу распределить дела.", parse_mode="Markdown"
     )
 
 
@@ -38,9 +38,9 @@ async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.now().strftime("%Y-%m-%d")
     existing = get_plan_for_date(today)
     if existing and existing.get("plan_text"):
-        await update.message.reply_text(f"План на сегодня (сохранён):\n{existing['plan_text']}", parse_mode="MarkdownV2")
+        await update.message.reply_text(f"План на сегодня (сохранён):\n{existing['plan_text']}", parse_mode="Markdown")
         if existing.get("advice_text"):
-            await update.message.reply_text(f"Совет:\n{existing['advice_text']}", parse_mode="MarkdownV2")
+            await update.message.reply_text(f"Совет:\n{existing['advice_text']}", parse_mode="Markdown")
     else:
         tasks = get_pending_tasks()
         task_txt = "\n".join([f"• {t['name']} ({t['category']}, {t['duration_min']} мин, приоритет {t['priority']})" for t in tasks]) or "• (нет задач)"
@@ -50,7 +50,7 @@ async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         system = "Ты — ежедневник-помощник. Форматируй ВСЕ ответы строго через Markdown-таблицы (| колонка | колонка |). НЕ используй жирный текст для заголовков таблиц. НЕ используй псевдотаблицы из тире или пробелов. Для матрицы Эйзенхауэра: заголовки Срочно / Не срочно. Для расписания: День | Утро (9-12) | День (12-17) | Вечер (17-20)."
         plan = call_groq(prompt, system)
         save_plan(today, plan)
-        await update.message.reply_text(f"План на {today}:\n{plan}", parse_mode="MarkdownV2")
+        await update.message.reply_text(f"План на {today}:\n{plan}", parse_mode="Markdown")
 
 
 async def cmd_consult(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -62,17 +62,17 @@ async def cmd_consult(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = f"Мои нерешённые дела:\n{task_txt}\n\nИстория планов (7 дней):\n{history_txt}\n\nАнализируй историю — что переносилось чаще всего, какие категории доминируют. Подскажи, как лучше распределить сегодня с учётом прошлых ошибок. Укажи порядок и объясни кратко."
     system = "Ты — консультант по планированию времени. Советуй, как распределить домашние дела, учитывая длительность и приоритеты. Отвечай кратко, практично, на русском."
     advice = call_groq(prompt, system)
-    await update.message.reply_text(f"Совет по распределению:\n{advice}", parse_mode="MarkdownV2")
+    await update.message.reply_text(f"Совет по распределению:\n{advice}", parse_mode="Markdown")
 
 
 async def cmd_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     init_db()
     tasks = get_pending_tasks()
     if not tasks:
-        await update.message.reply_text("Нет нерешённых задач. Добавьте через /add или текстом.", parse_mode="MarkdownV2")
+        await update.message.reply_text("Нет нерешённых задач. Добавьте через /add или текстом.", parse_mode="Markdown")
         return
     lines = [f"{t['id']}. {t['name']} | {t['category']} | {t['duration_min']} мин | приоритет {t['priority']}" for t in tasks]
-    await update.message.reply_text("Нерешённые дела:\n" + "\n".join(lines), parse_mode="MarkdownV2")
+    await update.message.reply_text("Нерешённые дела:\n" + "\n".join(lines), parse_mode="Markdown")
 
 
 async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -81,21 +81,21 @@ async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE):
     today = datetime.now().strftime("%Y-%m-%d")
     plan = get_plan_for_date(today)
     if not plan or not plan.get("plan_text"):
-        await update.message.reply_text("Плана на сегодня ещё нет. Напишите /plan или просто спросите.", parse_mode="MarkdownV2")
+        await update.message.reply_text("Плана на сегодня ещё нет. Напишите /plan или просто спросите.", parse_mode="Markdown")
     else:
-        await update.message.reply_text(f"План на сегодня ({today}):\n{plan['plan_text']}", parse_mode="MarkdownV2")
+        await update.message.reply_text(f"План на сегодня ({today}):\n{plan['plan_text']}", parse_mode="Markdown")
         if plan.get("advice_text"):
-            await update.message.reply_text(f"Совет:\n{plan['advice_text']}", parse_mode="MarkdownV2")
+            await update.message.reply_text(f"Совет:\n{plan['advice_text']}", parse_mode="Markdown")
 
 
 async def cmd_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Напишите название задачи (например: 'уборка кухни 30'):", parse_mode="MarkdownV2")
+    await update.message.reply_text("Напишите название задачи (например: 'уборка кухни 30'):", parse_mode="Markdown")
     return TASK_NAME
 
 
 async def add_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["new_task"] = {"name": update.message.text}
-    await update.message.reply_text("Сколько минут займёт? (число, по умолчанию 30):", parse_mode="MarkdownV2")
+    await update.message.reply_text("Сколько минут займёт? (число, по умолчанию 30):", parse_mode="Markdown")
     return TASK_DURATION
 
 
@@ -105,7 +105,7 @@ async def add_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         duration = 30
     context.user_data["new_task"]["duration"] = duration
-    await update.message.reply_text("Приоритет (1-5, по умолчанию 1):", parse_mode="MarkdownV2")
+    await update.message.reply_text("Приоритет (1-5, по умолчанию 1):", parse_mode="Markdown")
     return TASK_CONFIRM
 
 
@@ -117,7 +117,7 @@ async def add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     init_db()
     data = context.user_data.get("new_task", {"name": "задача"})
     save_task(data["name"], duration_min=data.get("duration", 30), priority=priority)
-    await update.message.reply_text(f"Добавлено: {data['name']} ({data.get('duration', 30)} мин, приоритет {priority}).", parse_mode="MarkdownV2")
+    await update.message.reply_text(f"Добавлено: {data['name']} ({data.get('duration', 30)} мин, приоритет {priority}).", parse_mode="Markdown")
     context.user_data.clear()
     return ConversationHandler.END
 
@@ -130,15 +130,15 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         tasks = get_pending_tasks()
         if tasks:
             lines = [f"{t['id']}. {t['name']} | {t['category']} | {t['duration_min']} мин | приоритет {t['priority']}" for t in tasks]
-            await update.message.reply_text("Нерешённые дела:\n" + "\n".join(lines), parse_mode="MarkdownV2")
+            await update.message.reply_text("Нерешённые дела:\n" + "\n".join(lines), parse_mode="Markdown")
         else:
-            await update.message.reply_text("Нет нерешённых задач.", parse_mode="MarkdownV2")
+            await update.message.reply_text("Нет нерешённых задач.", parse_mode="Markdown")
         return
     # Ответим как консультант + сохраним, если это задача
     prompt = f"Пользователь написал: '{text}'\nМои нерешённые дела:\n" + "\n".join([f"• {t['name']} ({t['duration_min']} мин)" for t in get_pending_tasks()]) + "\n\nОтветь кратко, помоги распределить или ответь на вопрос по планированию."
     system = "Ты — ежедневник-помощник, отвечаешь кратко, практично, на русском."
     reply = call_groq(prompt, system)
-    await update.message.reply_text(reply, parse_mode="MarkdownV2")
+    await update.message.reply_text(reply, parse_mode="Markdown")
 
 
 def main():
